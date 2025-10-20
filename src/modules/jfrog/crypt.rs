@@ -42,7 +42,7 @@ mod test {
 
     #[test]
     fn test_token() {
-        let test_token = "kkkkkkknnnnnnooooooxxxxx";
+        let test_token = "kkkkknnnnnoooooxxxxx";
         println!("origin token: {test_token}");
         let _en = encrypt(test_token);
         if let Some(_e) = _en {

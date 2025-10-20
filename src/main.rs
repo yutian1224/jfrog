@@ -11,7 +11,7 @@ static GLOBAL: Jemalloc = Jemalloc;
 
 fn main() {
     let thread_pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(5)
+        .num_threads(2)
         .thread_name(|i| format!("jfrog-{i}"))
         .build()
         .unwrap();

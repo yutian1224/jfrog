@@ -45,6 +45,8 @@ pub async fn groups_get() -> HttpResponse {
         {
             "code": 200,
             "data": res,
+            "result": true,
+            "msg": ""
         }
     );
     HttpResponse::Ok().json(resp)
@@ -69,6 +71,8 @@ pub async fn user_groups_get(querys: web::Query<ApiUserGroupsGET>) -> HttpRespon
         {
             "code": 200,
             "data": res,
+            "result": true,
+            "msg": ""
         }
     );
     HttpResponse::Ok().json(resp)
@@ -84,6 +88,8 @@ pub async fn user_groups_post(data: web::Json<ApiUserGroupsPOST>) -> HttpRespons
         {
             "code": 200,
             "msg": "user groups updated successfully".to_string(),
+            "result": true,
+            "data": {}
         }
     );
     HttpResponse::Ok().json(resp)
@@ -102,6 +108,8 @@ pub async fn user_groups_as_post(data: web::Json<ApiUserGroupsAsPOST>) -> HttpRe
         {
             "code": 200,
             "msg": "user groups updated successfully".to_string(),
+            "result": true,
+            "data": {}
         }
     );
     HttpResponse::Ok().json(resp)

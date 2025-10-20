@@ -16,16 +16,23 @@ pub enum ApiError<'a> {
 struct ErrorResponse {
     code: u16,
     msg: FastStr,
+    result: bool,
 }
 
 impl ApiError<'_> {
     pub fn to_response(&self) -> HttpResponse {
-        let (status, msg) = match self {
-            ApiError::BadRequest(msg) => (400, FastStr::from_str(msg).unwrap_or_default()),
-            ApiError::ServiceUnavailable(msg) => (503, FastStr::from_str(msg).unwrap_or_default()),
+        let (status, msg, result) = match self {
+            ApiError::BadRequest(msg) => (400, FastStr::from_str(msg).unwrap_or_default(), false),
+            ApiError::ServiceUnavailable(msg) => {
+                (503, FastStr::from_str(msg).unwrap_or_default(), false)
+            }
         };
 
-        let response = ErrorResponse { code: status, msg };
+        let response = ErrorResponse {
+            code: status,
+            msg,
+            result,
+        };
 
         match status {
             304 => HttpResponse::NotModified().json(response),
