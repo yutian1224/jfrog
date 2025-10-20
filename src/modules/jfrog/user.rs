@@ -33,12 +33,15 @@ pub async fn list_user_groups(user: &str) -> Result<Vec<String>, String> {
             });
         }
     }
+    info!("[{user}]current groups: {:?}", resp);
     Ok(resp)
 }
 
-pub async fn change_user_groups(user: &str, groups: Vec<String>) -> Result<(), String> {
-    let url = format!("{}/{user}", *URL);
+pub async fn change_user_groups(user: &str, mut groups: Vec<String>) -> Result<(), String> {
+    groups.retain(|g| g != "administrator");
+    let url = format!("{}/{user}/groups", *URL);
     let recent_groups = list_user_groups(user).await?;
+    info!("[{user}]changing groups to: {:?}", groups);
     let to_add: Vec<String> = groups
         .iter()
         .filter(|g| !recent_groups.contains(g))
@@ -51,6 +54,7 @@ pub async fn change_user_groups(user: &str, groups: Vec<String>) -> Result<(), S
         .collect();
     if to_add.is_empty() && to_remove.is_empty() {
         info!("[{user}]no changes");
+        return Ok(());
     }
     let body = json!({
         "add": to_add,

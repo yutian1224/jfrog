@@ -34,10 +34,12 @@ pub async fn groups_get() -> HttpResponse {
     }
     let res: Vec<HashMap<String, String>> = gruops
         .unwrap_or_default()
-        .iter()
-        .map(|(g, _)| {
+        .keys()
+        .filter(|g| *g != "administrator")
+        .cloned()
+        .map(|g| {
             let mut m = HashMap::new();
-            m.insert("group".to_string(), g.to_string());
+            m.insert("group".to_string(), g);
             m
         })
         .collect();
@@ -79,8 +81,22 @@ pub async fn user_groups_get(querys: web::Query<ApiUserGroupsGET>) -> HttpRespon
 }
 
 pub async fn user_groups_post(data: web::Json<ApiUserGroupsPOST>) -> HttpResponse {
-    let change_res =
-        user::change_user_groups(strip_email_suffix(&data.user), data.groups.clone()).await;
+    let groups: Vec<String> = data
+        .groups
+        .iter()
+        .flat_map(|g| {
+            let s = g.trim_matches(|c: char| c == '(' || c == ')' || c.is_whitespace());
+            s.split(',').filter_map(|part| {
+                let p = part.trim().trim_matches('\'');
+                if p.is_empty() {
+                    None
+                } else {
+                    Some(p.to_string())
+                }
+            })
+        })
+        .collect();
+    let change_res = user::change_user_groups(strip_email_suffix(&data.user), groups).await;
     if let Err(e) = change_res {
         return ApiError::ServiceUnavailable(&e).to_response();
     }
