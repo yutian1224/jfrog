@@ -28,7 +28,7 @@ fn strip_email_suffix(email: &str) -> &str {
 }
 
 pub async fn groups_get() -> HttpResponse {
-    let gruops = group::list_all_groups().await;
+    let gruops = group::groups_list().await;
     if let Err(e) = gruops {
         return ApiError::ServiceUnavailable(&e).to_response();
     }
@@ -56,7 +56,7 @@ pub async fn groups_get() -> HttpResponse {
 
 pub async fn user_groups_get(querys: web::Query<ApiUserGroupsGET>) -> HttpResponse {
     let user = strip_email_suffix(&querys.user);
-    let groups = user::list_user_groups(user).await;
+    let groups = user::user_groups_list(user).await;
     if let Err(e) = groups {
         return ApiError::ServiceUnavailable(&e).to_response();
     }
@@ -96,7 +96,7 @@ pub async fn user_groups_post(data: web::Json<ApiUserGroupsPOST>) -> HttpRespons
             })
         })
         .collect();
-    let change_res = user::change_user_groups(strip_email_suffix(&data.user), groups).await;
+    let change_res = user::user_groups_change(strip_email_suffix(&data.user), groups).await;
     if let Err(e) = change_res {
         return ApiError::ServiceUnavailable(&e).to_response();
     }
@@ -111,8 +111,70 @@ pub async fn user_groups_post(data: web::Json<ApiUserGroupsPOST>) -> HttpRespons
     HttpResponse::Ok().json(resp)
 }
 
+pub async fn user_groups_add_post(data: web::Json<ApiUserGroupsPOST>) -> HttpResponse {
+    let groups: Vec<String> = data
+        .groups
+        .iter()
+        .flat_map(|g| {
+            let s = g.trim_matches(|c: char| c == '(' || c == ')' || c.is_whitespace());
+            s.split(',').filter_map(|part| {
+                let p = part.trim().trim_matches('\'');
+                if p.is_empty() {
+                    None
+                } else {
+                    Some(p.to_string())
+                }
+            })
+        })
+        .collect();
+    let change_res = user::user_groups_add(strip_email_suffix(&data.user), groups).await;
+    if let Err(e) = change_res {
+        return ApiError::ServiceUnavailable(&e).to_response();
+    }
+    let resp = json!(
+        {
+            "code": 200,
+            "msg": "user groups added successfully".to_string(),
+            "result": true,
+            "data": {}
+        }
+    );
+    HttpResponse::Ok().json(resp)
+}
+
+pub async fn user_groups_del_post(data: web::Json<ApiUserGroupsPOST>) -> HttpResponse {
+    let groups: Vec<String> = data
+        .groups
+        .iter()
+        .flat_map(|g| {
+            let s = g.trim_matches(|c: char| c == '(' || c == ')' || c.is_whitespace());
+            s.split(',').filter_map(|part| {
+                let p = part.trim().trim_matches('\'');
+                if p.is_empty() {
+                    None
+                } else {
+                    Some(p.to_string())
+                }
+            })
+        })
+        .collect();
+    let change_res = user::user_groups_del(strip_email_suffix(&data.user), groups).await;
+    if let Err(e) = change_res {
+        return ApiError::ServiceUnavailable(&e).to_response();
+    }
+    let resp = json!(
+        {
+            "code": 200,
+            "msg": "user groups deleted successfully".to_string(),
+            "result": true,
+            "data": {}
+        }
+    );
+    HttpResponse::Ok().json(resp)
+}
+
 pub async fn user_groups_as_post(data: web::Json<ApiUserGroupsAsPOST>) -> HttpResponse {
-    let change_res = user::change_user_groups_as_other(
+    let change_res = user::user_groups_as_other(
         strip_email_suffix(&data.user),
         strip_email_suffix(&data.other),
     )
