@@ -79,7 +79,7 @@ pub async fn user_groups_del(user: &str, mut groups: Vec<String>) -> Result<(), 
     info!("[{user}]deleting groups: {:?}", groups);
     let to_remove: Vec<String> = recent_groups
         .iter()
-        .filter(|g| !groups.contains(g))
+        .filter(|g| groups.contains(g))
         .cloned()
         .collect();
     if to_remove.is_empty() {
