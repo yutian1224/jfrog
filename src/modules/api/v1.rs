@@ -1,4 +1,4 @@
-use crate::modules::{error::ApiError, jfrog::*};
+use crate::modules::{error::ApiError, jfrog::*, variable::BLOCK_GROUPS};
 use actix_web::{HttpResponse, web};
 use hashbrown::HashMap;
 use sonic_rs::{Deserialize, json};
@@ -35,7 +35,7 @@ pub async fn groups_get() -> HttpResponse {
     let res: Vec<HashMap<String, String>> = gruops
         .unwrap_or_default()
         .keys()
-        .filter(|g| *g != "administrator")
+        .filter(|g| !BLOCK_GROUPS.contains(g))
         .cloned()
         .map(|g| {
             let mut m = HashMap::new();

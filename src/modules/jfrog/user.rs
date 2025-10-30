@@ -1,3 +1,4 @@
+use super::USER_CACHE;
 use crate::modules::{client::HTTP_CLIENT, variable::JFORG_URL};
 use lazy_static::lazy_static;
 use log::{error, info, warn};
@@ -10,8 +11,11 @@ lazy_static! {
 static PATH_USERS: &str = "/access/api/v2/users";
 
 pub async fn user_groups_list(user: &str) -> Result<Vec<String>, String> {
+    if let Some(_g) = USER_CACHE.get(user).await {
+        return Ok(_g);
+    }
     let url = format!("{}/{user}", *URL);
-    let mut resp = Vec::new();
+    let mut resp = Vec::with_capacity(5);
     let res = HTTP_CLIENT.get(&url).send().await;
     if let Err(e) = res {
         warn!("[{user}]get user groups failed: {e}");
@@ -34,6 +38,7 @@ pub async fn user_groups_list(user: &str) -> Result<Vec<String>, String> {
         }
     }
     info!("[{user}]current groups: {:?}", resp);
+    USER_CACHE.insert(user.to_string(), resp.clone()).await;
     Ok(resp)
 }
 
@@ -119,7 +124,7 @@ pub async fn user_groups_change(user: &str, mut groups: Vec<String>) -> Result<(
         .collect();
     let to_remove: Vec<String> = recent_groups
         .iter()
-        .filter(|g| !groups.contains(g))
+        .filter(|g| !groups.contains(g) && *g != "administrator")
         .cloned()
         .collect();
     if to_add.is_empty() && to_remove.is_empty() {

@@ -1,3 +1,4 @@
+use super::GROUP_CACHE;
 use crate::modules::{client::HTTP_CLIENT, variable::JFORG_URL};
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
@@ -11,7 +12,10 @@ lazy_static! {
 static PATH_GROUPS: &str = "/access/api/v2/groups";
 
 pub async fn groups_list() -> Result<HashMap<String, String>, String> {
-    let mut resp = HashMap::new();
+    if let Some(_g) = GROUP_CACHE.get("data").await {
+        return Ok(_g);
+    }
+    let mut resp = HashMap::with_capacity(20);
     let res = HTTP_CLIENT.get(&*URL).send().await;
     if let Err(e) = res {
         error!("get {:?} failed: {e}", *URL);
@@ -36,5 +40,6 @@ pub async fn groups_list() -> Result<HashMap<String, String>, String> {
             Some(())
         });
     }
+    GROUP_CACHE.insert("data".to_string(), resp.clone()).await;
     Ok(resp)
 }
