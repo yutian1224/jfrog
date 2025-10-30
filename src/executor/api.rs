@@ -3,8 +3,10 @@ use crate::modules::{
     api::{
         auth::CheckAuth,
         v1::{
-            groups_get as v1_groups_get, user_groups_as_post as v1_user_groups_as_post,
-            user_groups_get as v1_user_groups_get, user_groups_post as v1_user_groups_post,
+            groups_get as v1_groups_get, user_groups_add_post as v1_user_groups_add_post,
+            user_groups_as_post as v1_user_groups_as_post,
+            user_groups_del_post as v1_user_groups_del_post, user_groups_get as v1_user_groups_get,
+            user_groups_post as v1_user_groups_post,
         },
     },
     variable::PKG_VERSION,
@@ -39,6 +41,14 @@ pub async fn init(addr: String, worker: usize) -> std::io::Result<()> {
                         web::resource("/v1/user/groups")
                             .route(web::get().to(v1_user_groups_get))
                             .route(web::post().to(v1_user_groups_post)),
+                    )
+                    .service(
+                        web::resource("/v1/user/groups/add")
+                            .route(web::post().to(v1_user_groups_add_post)),
+                    )
+                    .service(
+                        web::resource("/v1/user/groups/del")
+                            .route(web::post().to(v1_user_groups_del_post)),
                     )
                     .service(
                         web::resource("/v1/user/groups/as")

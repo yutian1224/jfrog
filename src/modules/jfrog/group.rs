@@ -10,7 +10,7 @@ lazy_static! {
 
 static PATH_GROUPS: &str = "/access/api/v2/groups";
 
-pub async fn list_all_groups() -> Result<HashMap<String, String>, String> {
+pub async fn groups_list() -> Result<HashMap<String, String>, String> {
     let mut resp = HashMap::new();
     let res = HTTP_CLIENT.get(&*URL).send().await;
     if let Err(e) = res {

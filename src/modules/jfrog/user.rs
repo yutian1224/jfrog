@@ -9,7 +9,7 @@ lazy_static! {
 
 static PATH_USERS: &str = "/access/api/v2/users";
 
-pub async fn list_user_groups(user: &str) -> Result<Vec<String>, String> {
+pub async fn user_groups_list(user: &str) -> Result<Vec<String>, String> {
     let url = format!("{}/{user}", *URL);
     let mut resp = Vec::new();
     let res = HTTP_CLIENT.get(&url).send().await;
@@ -37,10 +37,80 @@ pub async fn list_user_groups(user: &str) -> Result<Vec<String>, String> {
     Ok(resp)
 }
 
-pub async fn change_user_groups(user: &str, mut groups: Vec<String>) -> Result<(), String> {
+pub async fn user_groups_add(user: &str, mut groups: Vec<String>) -> Result<(), String> {
     groups.retain(|g| g != "administrator");
     let url = format!("{}/{user}/groups", *URL);
-    let recent_groups = list_user_groups(user).await?;
+    let recent_groups = user_groups_list(user).await?;
+    info!("[{user}]adding groups: {:?}", groups);
+    let to_add: Vec<String> = groups
+        .iter()
+        .filter(|g| !recent_groups.contains(g))
+        .cloned()
+        .collect();
+    if to_add.is_empty() {
+        info!("[{user}]no changes");
+        return Ok(());
+    }
+    let body = json!({
+        "add": to_add,
+        "remove": [],
+    });
+    info!("[{user}]changes for patch: {}", body);
+    let res = HTTP_CLIENT.patch(&url).json(&body).send().await;
+    if let Err(e) = res {
+        error!("[{user}]patch failed: {e}");
+        return Err(e.to_string());
+    }
+    if let Ok(_res) = res
+        && !_res.status().is_success()
+    {
+        let code = _res.status();
+        let txt = _res.text().await.unwrap_or_default();
+        error!("[{user}]patch failed: code {}, {:?}", code, txt);
+        return Err(txt);
+    }
+    Ok(())
+}
+
+pub async fn user_groups_del(user: &str, mut groups: Vec<String>) -> Result<(), String> {
+    groups.retain(|g| g != "administrator");
+    let url = format!("{}/{user}/groups", *URL);
+    let recent_groups = user_groups_list(user).await?;
+    info!("[{user}]deleting groups: {:?}", groups);
+    let to_remove: Vec<String> = recent_groups
+        .iter()
+        .filter(|g| groups.contains(g))
+        .cloned()
+        .collect();
+    if to_remove.is_empty() {
+        info!("[{user}]no changes");
+        return Ok(());
+    }
+    let body = json!({
+        "add": [],
+        "remove": to_remove,
+    });
+    info!("[{user}]changes for patch: {}", body);
+    let res = HTTP_CLIENT.patch(&url).json(&body).send().await;
+    if let Err(e) = res {
+        error!("[{user}]patch failed: {e}");
+        return Err(e.to_string());
+    }
+    if let Ok(_res) = res
+        && !_res.status().is_success()
+    {
+        let code = _res.status();
+        let txt = _res.text().await.unwrap_or_default();
+        error!("[{user}]patch failed: code {}, {:?}", code, txt);
+        return Err(txt);
+    }
+    Ok(())
+}
+
+pub async fn user_groups_change(user: &str, mut groups: Vec<String>) -> Result<(), String> {
+    groups.retain(|g| g != "administrator");
+    let url = format!("{}/{user}/groups", *URL);
+    let recent_groups = user_groups_list(user).await?;
     info!("[{user}]changing groups to: {:?}", groups);
     let to_add: Vec<String> = groups
         .iter()
@@ -77,7 +147,7 @@ pub async fn change_user_groups(user: &str, mut groups: Vec<String>) -> Result<(
     Ok(())
 }
 
-pub async fn change_user_groups_as_other(user: &str, other: &str) -> Result<(), String> {
-    let other_groups = list_user_groups(other).await?;
-    change_user_groups(user, other_groups).await
+pub async fn user_groups_as_other(user: &str, other: &str) -> Result<(), String> {
+    let other_groups = user_groups_list(other).await?;
+    user_groups_change(user, other_groups).await
 }
