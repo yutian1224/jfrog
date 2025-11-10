@@ -11,9 +11,19 @@ lazy_static! {
         let _s = env::var("J_BLOCK_GROUPS").unwrap_or_default();
         let mut _g = _s
             .split(',')
+            .filter(|x| !x.is_empty())
             .map(|x| x.to_lowercase().to_string())
             .collect::<Vec<String>>();
         _g.push("administrator".to_string());
+        _g
+    };
+    pub static ref WHITE_GROUPS: Vec<String> = {
+        let _s = env::var("J_WHITE_GROUPS").unwrap_or_default();
+        let _g = _s
+            .split(',')
+            .filter(|x| !x.is_empty())
+            .map(|x| x.to_lowercase().to_string())
+            .collect::<Vec<String>>();
         _g
     };
 }

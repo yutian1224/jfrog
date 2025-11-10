@@ -1,4 +1,8 @@
-use crate::modules::{error::ApiError, jfrog::*, variable::BLOCK_GROUPS};
+use crate::modules::{
+    error::ApiError,
+    jfrog::*,
+    variable::{BLOCK_GROUPS, WHITE_GROUPS},
+};
 use actix_web::{HttpResponse, web};
 use hashbrown::HashMap;
 use sonic_rs::{Deserialize, json};
@@ -35,7 +39,9 @@ pub async fn groups_get() -> HttpResponse {
     let res: Vec<HashMap<String, String>> = gruops
         .unwrap_or_default()
         .keys()
-        .filter(|g| !BLOCK_GROUPS.contains(g))
+        .filter(|g| {
+            (WHITE_GROUPS.is_empty() || WHITE_GROUPS.contains(g)) && !BLOCK_GROUPS.contains(g)
+        })
         .cloned()
         .map(|g| {
             let mut m = HashMap::new();
@@ -95,6 +101,7 @@ pub async fn user_groups_post(data: web::Json<ApiUserGroupsPOST>) -> HttpRespons
                 }
             })
         })
+        .filter(|g| WHITE_GROUPS.is_empty() || WHITE_GROUPS.contains(g))
         .collect();
     let change_res = user::user_groups_change(strip_email_suffix(&data.user), groups).await;
     if let Err(e) = change_res {
@@ -126,6 +133,7 @@ pub async fn user_groups_add_post(data: web::Json<ApiUserGroupsPOST>) -> HttpRes
                 }
             })
         })
+        .filter(|g| WHITE_GROUPS.is_empty() || WHITE_GROUPS.contains(g))
         .collect();
     let change_res = user::user_groups_add(strip_email_suffix(&data.user), groups).await;
     if let Err(e) = change_res {

@@ -1,5 +1,8 @@
 use super::USER_CACHE;
-use crate::modules::{client::HTTP_CLIENT, variable::JFORG_URL};
+use crate::modules::{
+    client::HTTP_CLIENT,
+    variable::{JFORG_URL, WHITE_GROUPS},
+};
 use lazy_static::lazy_static;
 use log::{error, info, warn};
 use sonic_rs::{JsonContainerTrait, JsonValueTrait, Value, json};
@@ -153,6 +156,7 @@ pub async fn user_groups_change(user: &str, mut groups: Vec<String>) -> Result<(
 }
 
 pub async fn user_groups_as_other(user: &str, other: &str) -> Result<(), String> {
-    let other_groups = user_groups_list(other).await?;
+    let mut other_groups = user_groups_list(other).await?;
+    other_groups.retain(|g| WHITE_GROUPS.is_empty() || WHITE_GROUPS.contains(g));
     user_groups_change(user, other_groups).await
 }
